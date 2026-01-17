@@ -1,19 +1,23 @@
 import sqlite3
+import os
 
-conn = sqlite3.connect("data/restaurant_menu.db")
+DB_PATH = "database/restaurant_menu.db"
+os.makedirs("database", exist_ok=True)
+
+conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
 
-#USERS
+# ===== USERS =====
 cur.execute("""
-    CREATE TABLE IF NOT EXISTS users(
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT,
-            role TEXT
-    );
-    """)
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT
+);
+""")
 
-#CATEGORIES
+# ===== CATEGORIES =====
 cur.execute("""
 CREATE TABLE IF NOT EXISTS categories (
     category_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,7 +26,7 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 """)
 
-#MENU_ITEMS
+# ===== MENU ITEMS =====
 cur.execute("""
 CREATE TABLE IF NOT EXISTS menu_items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,7 +40,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
 );
 """)
 
-#CART_ITEMS
+# ===== CART ITEMS =====
 cur.execute("""
 CREATE TABLE IF NOT EXISTS cart_items (
     cart_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,8 +53,8 @@ CREATE TABLE IF NOT EXISTS cart_items (
 );
 """)
 
-#ORDERS
-cur.execute(""")
+# ===== ORDERS =====
+cur.execute("""
 CREATE TABLE IF NOT EXISTS orders (
     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -61,7 +65,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 """)
 
-#ORDER_ITEMS
+# ===== ORDER ITEMS =====
 cur.execute("""
 CREATE TABLE IF NOT EXISTS order_items (
     order_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,4 +82,5 @@ CREATE TABLE IF NOT EXISTS order_items (
 conn.commit()
 conn.close()
 
-print("Database and tables created successfully.")
+print("Database initialized successfully.")
+

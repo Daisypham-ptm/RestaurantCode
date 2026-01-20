@@ -1,14 +1,11 @@
-import sqlite3
-import os
+from db import get_connection
 
-DB_PATH = "database/restaurant_menu.db"
-os.makedirs("database", exist_ok=True)
-
-conn = sqlite3.connect(DB_PATH)
-cur = conn.cursor()
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
 
 # ===== USERS =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
@@ -20,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 
 # ===== CATEGORIES =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS categories (
     category_id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_name TEXT NOT NULL,
@@ -30,7 +27,7 @@ CREATE TABLE IF NOT EXISTS categories (
 """)
 
 # ===== MENU ITEMS =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS menu_items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id INTEGER,
@@ -44,7 +41,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
 """)
 
 # ===== CART =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS cart (
     cart_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id UNIQUE,
@@ -54,7 +51,7 @@ CREATE TABLE IF NOT EXISTS cart (
 """)
 
 # ===== CART ITEMS =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS cart_items (
     cart_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
     cart_id INTEGER,
@@ -67,7 +64,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
 """) 
 
 # ===== ORDERS =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS orders (
     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -81,7 +78,7 @@ CREATE TABLE IF NOT EXISTS orders (
 """) # order_history = SELECT * FROM orders WHERE user_id = ?
 
 # ===== ORDER ITEMS =====
-cur.execute("""
+    cur.execute("""
 CREATE TABLE IF NOT EXISTS order_items (
     order_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
     order_id INTEGER,
@@ -96,8 +93,8 @@ CREATE TABLE IF NOT EXISTS order_items (
 """)
 
 # ===== REVIEWS =====
-cur.execute("""
-CREATE TABLE reviews (
+    cur.execute("""
+CREATE TABLE IF NOT EXISTS reviews (
     review_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     item_id INTEGER,
@@ -109,8 +106,8 @@ CREATE TABLE reviews (
 );
 """)
 
-conn.commit()
-conn.close()
+    conn.commit()
+    conn.close()
 
-print("Database initialized successfully.")
+    print("Database initialized successfully.")
 

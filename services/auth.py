@@ -1,5 +1,5 @@
 from models.user import Admin, Customer
-from db import get_connection
+from data.init_db import get_connection
 
 
 # =============== MAIN MENU ===============
@@ -18,7 +18,7 @@ def main_menu():
         if choice == "1":
             return login_menu()
         elif choice == "2":
-            return register_menu()
+            return register_screen()
         elif choice == "0":
             print("Exiting the system.")
             return None
@@ -31,8 +31,8 @@ def login_menu():
     print("\n========================================")
     print("   RESTAURANT ORDER MANAGEMENT SYSTEM")
     print("========================================")
-    print("1. Login")
-    print("2. Register")
+    print("1. Customer")
+    print("2. Admin")
     print("0. Exit")
     print("----------------------------------------")
 

@@ -5,6 +5,7 @@ DB_PATH = "database/restaurant_menu.db"
 
 def get_connection():
     return sqlite3.connect(DB_PATH)
+
 def input_int(msg):
     while True:
         try:
@@ -77,6 +78,7 @@ def admin_menu():
             break
         else:
             print("Invalid choice.")
+
 def manage_menu_items():
     while True:
         print("\n===== MANAGE MENU ITEMS =====")
@@ -362,6 +364,7 @@ def update_order_status():
         if not continue_or_back():
             break
 
+
 def manage_users():
     while True:
         print("\n===== MANAGE USERS =====")
@@ -448,7 +451,6 @@ def delete_user():
         if not continue_or_back():
             break
 
-
 def view_reports():
     conn = get_connection()
     cur = conn.cursor()
@@ -479,6 +481,7 @@ def view_reports():
         print("Best Selling Item: None")
 
     input("\nPress Enter to continue...")
+
 
 if __name__ == "__main__":
     admin_menu()

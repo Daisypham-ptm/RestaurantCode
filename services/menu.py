@@ -1,238 +1,33 @@
-class MenuManager:
-    """Menu Management Class - Service Layer"""
-    
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self.conn = None
-        self.cursor = None
-        self.connect()
-    
-    def connect(self) -> None:
-        """Kết nối database"""
-        try:
-            self.conn = sqlite3.connect(self.db_path)
-            self.conn.row_factory = sqlite3.Row
-            self.cursor = self.conn.cursor()
-        except sqlite3.Error as err:
-            print(f"Database connection error: {err}")
-            raise
-    
-    def close(self) -> None:
-        """Đóng kết nối database"""
-        if self.conn:
-            self.conn.close()
-    
-    def view_menu(self, category_id: Optional[int] = None) -> List[MenuItem]:
-        """Xem danh sách menu"""
-        try:
-            query = """
-                SELECT m.*
-                FROM menu_items m
-                JOIN categories c ON m.category_id = c.category_id
-                WHERE m.status = 'available'
-            """
-            params = []
-            
-            if category_id is not None:
-                query += " AND m.category_id = ?"
-                params.append(category_id)
-            
-            query += " ORDER BY m.item_name ASC"
-            
-            self.cursor.execute(query, params)
-            rows = self.cursor.fetchall()
-            
-            menu_items = []
-            for row in rows:
-                menu_items.append(
-                    MenuItem(
-                        item_id=row["item_id"],
-                        category_id=row["category_id"],
-                        item_name=row["item_name"],
-                        description=row["description"],
-                        price=row["price"],
-                        status=row["status"],
-                        order_count=row.get("order_count", 0),
-                        avg_rating=row.get("avg_rating", 0.0)
-                    )
-                )
-            
-            return menu_items
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return []
-    
-    def search_menu(self, keyword: str) -> List[MenuItem]:
-        """Tìm kiếm món ăn theo từ khóa"""
-        try:
-            query = """
-                SELECT m.*
-                FROM menu_items m
-                JOIN categories c ON m.category_id = c.category_id
-                WHERE m.status = 'available'
-                AND (
-                    m.item_name LIKE ?
-                    OR m.description LIKE ?
-                )
-                ORDER BY m.item_name ASC
-            """
-            
-            pattern = f"%{keyword}%"
-            self.cursor.execute(query, (pattern, pattern))
-            rows = self.cursor.fetchall()
-            
-            menu_items = []
-            for row in rows:
-                menu_items.append(
-                    MenuItem(
-                        item_id=row["item_id"],
-                        category_id=row["category_id"],
-                        item_name=row["item_name"],
-                        description=row["description"],
-                        price=row["price"],
-                        status=row["status"],
-                        order_count=row.get("order_count", 0),
-                        avg_rating=row.get("avg_rating", 0.0)
-                    )
-                )
-            
-            return menu_items
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return []
-    
-    def view_food_detail(self, item_id: int) -> Optional[Dict]:
-        """Xem chi tiết món ăn"""
-        try:
-            query = """
-                SELECT m.*, c.category_name
-                FROM menu_items m
-                JOIN categories c ON m.category_id = c.category_id
-                WHERE m.item_id = ?
-            """
-            self.cursor.execute(query, (item_id,))
-            row = self.cursor.fetchone()
-            
-            if not row:
-                return None
-            
-            return {
-                "item_id": row["item_id"],
-                "item_name": row["item_name"],
-                "category_name": row["category_name"],
-                "description": row["description"],
-                "price": row["price"],
-                "status": row["status"],
-                "order_count": row.get("order_count", 0),
-                "avg_rating": row.get("avg_rating", 0.0)
-            }
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return None
-    
-    def get_categories(self) -> List[Dict]:
-        """Lấy danh sách tất cả categories"""
-        try:
-            query = "SELECT * FROM categories ORDER BY display_order ASC"
-            self.cursor.execute(query)
-            return [dict(row) for row in self.cursor.fetchall()]
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return []
-    
-    def get_menu_item_by_id(self, item_id: int) -> Optional[MenuItem]:
-        """Lấy MenuItem object theo ID"""
-        try:
-            query = "SELECT * FROM menu_items WHERE item_id = ?"
-            self.cursor.execute(query, (item_id,))
-            row = self.cursor.fetchone()
-            
-            if not row:
-                return None
-            
-            return MenuItem(
-                item_id=row["item_id"],
-                category_id=row["category_id"],
-                item_name=row["item_name"],
-                description=row["description"],
-                price=row["price"],
-                status=row["status"],
-                order_count=row.get("order_count", 0),
-                avg_rating=row.get("avg_rating", 0.0)
-            )
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return None
+from menu import Category
 
 
-# UI DISPLAY FUNCTIONS
+def main():
+    print("=== MENU TEST ===\n")
 
-def display_view_menu(items: List[MenuItem]) -> None:
-    """Hiển thị danh sách menu"""
-    print("\n" + "=" * 70)
-    print("VIEW MENU".center(70))
-    print("=" * 70)
     
+    category = Category(
+        category_id=1,
+        category_name="Food",
+        description="Food Menu"
+    )
+
+    items = category.get_menu_items()
+
     if not items:
-        print("No food items found.")
-        print("=" * 70)
+        print(" Không có món nào trong danh mục này")
         return
-    
-    print(f"{'Food ID':<10} {'Name':<30} {'Price':<15} {'Status':<12}")
-    print("-" * 70)
-    
+
+    print(f"Danh sách món trong category '{category.category_name}':\n")
+
     for item in items:
-        print(
-            f"{item.item_id:<10} "
-            f"{item.item_name:<30} "
-            f"{item.price:>12,.0f} VND "
-            f"{item.status:<12}"
-        )
-    
-    print("=" * 70)
+        print(f"- ID: {item.item_id}")
+        print(f"  Tên: {item.item_name}")
+        print(f"  Mô tả: {item.description}")
+        print(f"  Giá: {item.price}")
+        print(f"  Trạng thái: {item.status}")
+        print(f"  Rating TB: {item.avg_rating}")
+        print("-" * 30)
 
 
-def display_search_menu(keyword: str, items: List[MenuItem]) -> None:
-    """Hiển thị kết quả tìm kiếm"""
-    print(f"\nSearch keyword: {keyword}")
-    
-    if not items:
-        print("No matching items found.")
-        return
-    
-    print(f"\nResults found: {len(items)} item(s)")
-    print(f"{'Food ID':<10} {'Name':<30} {'Price':<15} {'Status':<12}")
-    print("-" * 70)
-    
-    for item in items:
-        print(
-            f"{item.item_id:<10} "
-            f"{item.item_name:<30} "
-            f"{item.price:>12,.0f} VND "
-            f"{item.status:<12}"
-        )
-
-
-def display_food_detail(detail: Optional[Dict]) -> None:
-    """Hiển thị chi tiết món ăn"""
-    if not detail:
-        print("\nFood item not found!")
-        return
-    
-    print("\n" + "=" * 70)
-    print("FOOD DETAIL".center(70))
-    print("=" * 70)
-    
-    print(f"Name:        {detail['item_name']}")
-    print(f"Category:    {detail['category_name']}")
-    print(f"Price:       {detail['price']:,.0f} VND")
-    print(f"Description: {detail['description']}")
-    print(f"Status:      {detail['status']}")
-    print(f"Order Count: {detail.get('order_count', 0)}")
-    print(f"Avg Rating:  {detail.get('avg_rating', 0.0):.1f}/5.0")
-    
-    print("=" * 70)
+if __name__ == "__main__":
+    main()

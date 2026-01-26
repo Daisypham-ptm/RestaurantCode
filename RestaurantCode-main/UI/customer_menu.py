@@ -90,10 +90,10 @@ def place_order_ui(customer):
     try:
         order_id = OrderService.place_order(
             user_id=customer.user_id,
-            payment_method=payment_method,
-            notes=notes
+            notes=notes,
+            payment_method=payment_method
         )
-
+        print(f"Order successful! Your Order ID is {order_id}.")
     except Exception as e:
         print("Place order failed:", e)
 
@@ -159,7 +159,20 @@ def view_order_history_ui(customer):
             "Item ID", "Qty", "Unit Price", "Subtotal"
         ))
 
-        for item_id, qty, price, subtotal in order["items"]:
+        print(order["items"])
+        for item in order["items"]:
+            item_id= item["item_id"]
+            qty= item["quantity"]
+
+
+            price= item["unit_price"]
+            if price is None:
+                price= 0
+
+            subtotal= item["subtotal"]
+            if subtotal is None:
+                subtotal= qty* price
+                
             print("{:<10} {:<10} {:<12} {:<12}".format(
                 item_id, qty, price, subtotal
             ))
@@ -224,16 +237,16 @@ def customer_menu(customer):
             manage_cart_ui(Cart(customer.user_id))
 
         elif choice == "5":
-            place_order_ui(customer.user_id)
+            place_order_ui(customer)
 
         elif choice == "6":
             make_payment_ui()
 
         elif choice == "7":
-            view_order_status_ui(customer.user_id)
+            view_order_status_ui(customer)
 
         elif choice == "8":
-            view_order_history_ui(customer.user_id)
+            view_order_history_ui(customer)
 
         elif choice == "9":
             update_profile_ui(customer)

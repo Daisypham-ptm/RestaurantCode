@@ -1,238 +1,312 @@
-class MenuManager:
-    """Menu Management Class - Service Layer"""
-    
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self.conn = None
-        self.cursor = None
-        self.connect()
-    
-    def connect(self) -> None:
-        """Kết nối database"""
-        try:
-            self.conn = sqlite3.connect(self.db_path)
-            self.conn.row_factory = sqlite3.Row
-            self.cursor = self.conn.cursor()
-        except sqlite3.Error as err:
-            print(f"Database connection error: {err}")
-            raise
-    
-    def close(self) -> None:
-        """Đóng kết nối database"""
-        if self.conn:
-            self.conn.close()
-    
-    def view_menu(self, category_id: Optional[int] = None) -> List[MenuItem]:
-        """Xem danh sách menu"""
-        try:
-            query = """
-                SELECT m.*
-                FROM menu_items m
-                JOIN categories c ON m.category_id = c.category_id
-                WHERE m.status = 'available'
-            """
-            params = []
-            
-            if category_id is not None:
-                query += " AND m.category_id = ?"
-                params.append(category_id)
-            
-            query += " ORDER BY m.item_name ASC"
-            
-            self.cursor.execute(query, params)
-            rows = self.cursor.fetchall()
-            
-            menu_items = []
-            for row in rows:
-                menu_items.append(
-                    MenuItem(
-                        item_id=row["item_id"],
-                        category_id=row["category_id"],
-                        item_name=row["item_name"],
-                        description=row["description"],
-                        price=row["price"],
-                        status=row["status"],
-                        order_count=row.get("order_count", 0),
-                        avg_rating=row.get("avg_rating", 0.0)
-                    )
-                )
-            
-            return menu_items
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return []
-    
-    def search_menu(self, keyword: str) -> List[MenuItem]:
-        """Tìm kiếm món ăn theo từ khóa"""
-        try:
-            query = """
-                SELECT m.*
-                FROM menu_items m
-                JOIN categories c ON m.category_id = c.category_id
-                WHERE m.status = 'available'
-                AND (
-                    m.item_name LIKE ?
-                    OR m.description LIKE ?
-                )
-                ORDER BY m.item_name ASC
-            """
-            
-            pattern = f"%{keyword}%"
-            self.cursor.execute(query, (pattern, pattern))
-            rows = self.cursor.fetchall()
-            
-            menu_items = []
-            for row in rows:
-                menu_items.append(
-                    MenuItem(
-                        item_id=row["item_id"],
-                        category_id=row["category_id"],
-                        item_name=row["item_name"],
-                        description=row["description"],
-                        price=row["price"],
-                        status=row["status"],
-                        order_count=row.get("order_count", 0),
-                        avg_rating=row.get("avg_rating", 0.0)
-                    )
-                )
-            
-            return menu_items
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return []
-    
-    def view_food_detail(self, item_id: int) -> Optional[Dict]:
-        """Xem chi tiết món ăn"""
-        try:
-            query = """
-                SELECT m.*, c.category_name
-                FROM menu_items m
-                JOIN categories c ON m.category_id = c.category_id
-                WHERE m.item_id = ?
-            """
-            self.cursor.execute(query, (item_id,))
-            row = self.cursor.fetchone()
-            
-            if not row:
-                return None
-            
-            return {
-                "item_id": row["item_id"],
-                "item_name": row["item_name"],
-                "category_name": row["category_name"],
-                "description": row["description"],
-                "price": row["price"],
-                "status": row["status"],
-                "order_count": row.get("order_count", 0),
-                "avg_rating": row.get("avg_rating", 0.0)
-            }
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return None
-    
-    def get_categories(self) -> List[Dict]:
-        """Lấy danh sách tất cả categories"""
-        try:
-            query = "SELECT * FROM categories ORDER BY display_order ASC"
-            self.cursor.execute(query)
-            return [dict(row) for row in self.cursor.fetchall()]
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return []
-    
-    def get_menu_item_by_id(self, item_id: int) -> Optional[MenuItem]:
-        """Lấy MenuItem object theo ID"""
-        try:
-            query = "SELECT * FROM menu_items WHERE item_id = ?"
-            self.cursor.execute(query, (item_id,))
-            row = self.cursor.fetchone()
-            
-            if not row:
-                return None
-            
-            return MenuItem(
-                item_id=row["item_id"],
-                category_id=row["category_id"],
-                item_name=row["item_name"],
-                description=row["description"],
-                price=row["price"],
-                status=row["status"],
-                order_count=row.get("order_count", 0),
-                avg_rating=row.get("avg_rating", 0.0)
-            )
-        
-        except sqlite3.Error as err:
-            print(f"Database error: {err}")
-            return None
+from menu import Categfrom db import get_connection
 
 
-# UI DISPLAY FUNCTIONS
+class MenuItem:
+    """Class đại diện cho một món ăn trong menu"""
+    
+    def __init__(self, item_id, item_name, description, price, status, category_id=None, avg_rating=0, order_count=0):
+        self.item_id = item_id
+        self.item_name = item_name
+        self.description = description
+        self.price = price
+        self.status = status
+        self.category_id = category_id
+        self.avg_rating = avg_rating
+        self.order_count = order_count
 
-def display_view_menu(items: List[MenuItem]) -> None:
-    """Hiển thị danh sách menu"""
-    print("\n" + "=" * 70)
-    print("VIEW MENU".center(70))
-    print("=" * 70)
-    
-    if not items:
-        print("No food items found.")
-        print("=" * 70)
-        return
-    
-    print(f"{'Food ID':<10} {'Name':<30} {'Price':<15} {'Status':<12}")
-    print("-" * 70)
-    
-    for item in items:
-        print(
-            f"{item.item_id:<10} "
-            f"{item.item_name:<30} "
-            f"{item.price:>12,.0f} VND "
-            f"{item.status:<12}"
+    def get_details(self):
+        """Lấy thông tin chi tiết của món ăn - Dùng cho chức năng View Food Detail"""
+        return {
+            'item_id': self.item_id,
+            'item_name': self.item_name,
+            'description': self.description,
+            'price': self.price,
+            'status': self.status,
+            'avg_rating': self.avg_rating
+        }
+
+    def update_order_count(self):
+        """Cập nhật số lượng đơn hàng cho món ăn"""
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE menu_items SET order_count = order_count + 1 WHERE item_id = ?",
+            (self.item_id,)
         )
-    
-    print("=" * 70)
+        conn.commit()
+        conn.close()
 
-
-def display_search_menu(keyword: str, items: List[MenuItem]) -> None:
-    """Hiển thị kết quả tìm kiếm"""
-    print(f"\nSearch keyword: {keyword}")
-    
-    if not items:
-        print("No matching items found.")
-        return
-    
-    print(f"\nResults found: {len(items)} item(s)")
-    print(f"{'Food ID':<10} {'Name':<30} {'Price':<15} {'Status':<12}")
-    print("-" * 70)
-    
-    for item in items:
-        print(
-            f"{item.item_id:<10} "
-            f"{item.item_name:<30} "
-            f"{item.price:>12,.0f} VND "
-            f"{item.status:<12}"
+    def calculate_avg_rating(self):
+        """Tính toán và cập nhật điểm đánh giá trung bình"""
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT AVG(rating) FROM reviews WHERE item_id = ?",
+            (self.item_id,)
         )
+        avg = cur.fetchone()[0]
+        avg_rating = avg if avg else 0
+        
+        # Cập nhật avg_rating vào database
+        cur.execute(
+            "UPDATE menu_items SET avg_rating = ? WHERE item_id = ?",
+            (avg_rating, self.item_id)
+        )
+        conn.commit()
+        conn.close()
+        
+        self.avg_rating = avg_rating
+        return self.avg_rating
 
 
-def display_food_detail(detail: Optional[Dict]) -> None:
-    """Hiển thị chi tiết món ăn"""
-    if not detail:
-        print("\nFood item not found!")
+class Category:
+    """Class đại diện cho danh mục món ăn"""
+    
+    def __init__(self, category_id, category_name, description, display_order=0):
+        self.category_id = category_id
+        self.category_name = category_name
+        self.description = description
+        self.display_order = display_order
+
+    def get_menu_items(self):
+        """Lấy danh sách tất cả món ăn trong danh mục"""
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT item_id, item_name, description, price, status, category_id, avg_rating, order_count
+            FROM menu_items
+            WHERE category_id = ?
+            ORDER BY item_name
+            """,
+            (self.category_id,)
+        )
+        rows = cur.fetchall()
+        conn.close()
+        return [MenuItem(*row) for row in rows]
+
+
+# =========
+# FUNCTIONS 
+# ==========
+
+def view_menu():
+    """
+    Chức năng 1: View Menu
+    Hiển thị tất cả món ăn dạng bảng với: Food ID, Name, Price, Status
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT item_id, item_name, price, status
+        FROM menu_items
+        ORDER BY item_id
+        """
+    )
+    items = cur.fetchall()
+    conn.close()
+    
+    if items:
+        print("\n" + "="*80)
+        print(f"{'Food ID':<10} {'Name':<30} {'Price (VND)':<15} {'Status':<15}")
+        print("="*80)
+        for item in items:
+            print(f"{item[0]:<10} {item[1]:<30} {item[2]:<15,.0f} {item[3]:<15}")
+        print("="*80)
+    else:
+        print("\nKhông có món ăn nào trong menu!")
+    
+    return items
+
+
+def search_menu(keyword):
+    """
+    Chức năng 2: Search Menu
+    Tìm kiếm món ăn theo từ khóa (tên hoặc mô tả)
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT item_id, item_name, description, price, status
+        FROM menu_items
+        WHERE item_name LIKE ? OR description LIKE ?
+        ORDER BY item_name
+        """,
+        (f'%{keyword}%', f'%{keyword}%')
+    )
+    items = cur.fetchall()
+    conn.close()
+    
+    if items:
+        print(f"\nKết quả tìm kiếm cho '{keyword}':")
+        print("="*80)
+        print(f"{'Food ID':<10} {'Name':<25} {'Price (VND)':<15} {'Status':<15}")
+        print("="*80)
+        for item in items:
+            print(f"{item[0]:<10} {item[1]:<25} {item[3]:<15,.0f} {item[4]:<15}")
+        print("="*80)
+    else:
+        print(f"\nKhông tìm thấy món ăn nào với từ khóa '{keyword}'")
+    
+    return items
+
+
+def view_food_detail(item_id):
+    """
+    Chức năng 3: View Food Detail
+    Hiển thị thông tin chi tiết: Name, Price, Description, Status
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT item_name, price, description, status
+        FROM menu_items
+        WHERE item_id = ?
+        """,
+        (item_id,)
+    )
+    item = cur.fetchone()
+    conn.close()
+    
+    if item:
+        print("\n" + "="*60)
+        print("CHI TIẾT MÓN ĂN")
+        print("="*60)
+        print(f"Tên món        : {item[0]}")
+        print(f"Giá            : {item[1]:,.0f} VND")
+        print(f"Mô tả          : {item[2]}")
+        print(f"Trạng thái     : {item[3]}")
+        print("="*60)
+        return item
+    else:
+        print(f"\nKhông tìm thấy món ăn với ID: {item_id}")
+        return None
+
+
+# =========================
+# HELPER FUNCTIONS
+# =========================
+
+def get_all_categories():
+    """Lấy tất cả các danh mục món ăn"""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT category_id, category_name, description, display_order
+        FROM categories
+        ORDER BY display_order, category_name
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [Category(*row) for row in rows]
+
+
+def get_category_by_id(category_id):
+    """Lấy thông tin danh mục theo ID"""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT category_id, category_name, description, display_order
+        FROM categories
+        WHERE category_id = ?
+        """,
+        (category_id,)
+    )
+    row = cur.fetchone()
+    conn.close()
+    
+    if row:
+        return Category(*row)
+    return None
+
+
+def get_menu_item_by_id(item_id):
+    """Lấy thông tin món ăn theo ID"""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT item_id, item_name, description, price, status, category_id, avg_rating, order_count
+        FROM menu_items
+        WHERE item_id = ?
+        """,
+        (item_id,)
+    )
+    row = cur.fetchone()
+    conn.close()
+    
+    if row:
+        return MenuItem(*row)
+    return None
+
+
+def get_all_menu_items():
+    """Lấy tất cả các món ăn"""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT item_id, item_name, description, price, status, category_id, avg_rating, order_count
+        FROM menu_items
+        ORDER BY item_name
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [MenuItem(*row) for row in rows]
+
+
+def get_available_menu_items():
+    """Lấy các món ăn đang có sẵn (status = 'available')"""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT item_id, item_name, description, price, status, category_id, avg_rating, order_count
+        FROM menu_items
+        WHERE status = 'available'
+        ORDER BY item_name
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [MenuItem(*row) for row in rows]ory
+
+
+def main():
+    print("=== MENU TEST ===\n")
+
+    
+    category = Category(
+        category_id=1,
+        category_name="Food",
+        description="Food Menu"
+    )
+
+    items = category.get_menu_items()
+
+    if not items:
+        print(" Không có món nào trong danh mục này")
         return
-    
-    print("\n" + "=" * 70)
-    print("FOOD DETAIL".center(70))
-    print("=" * 70)
-    
-    print(f"Name:        {detail['item_name']}")
-    print(f"Category:    {detail['category_name']}")
-    print(f"Price:       {detail['price']:,.0f} VND")
-    print(f"Description: {detail['description']}")
-    print(f"Status:      {detail['status']}")
-    print(f"Order Count: {detail.get('order_count', 0)}")
-    print(f"Avg Rating:  {detail.get('avg_rating', 0.0):.1f}/5.0")
-    
-    print("=" * 70)
+
+    print(f"Danh sách món trong category '{category.category_name}':\n")
+
+    for item in items:
+        print(f"- ID: {item.item_id}")
+        print(f"  Tên: {item.item_name}")
+        print(f"  Mô tả: {item.description}")
+        print(f"  Giá: {item.price}")
+        print(f"  Trạng thái: {item.status}")
+        print(f"  Rating TB: {item.avg_rating}")
+        print("-" * 30)
+
+
+if __name__ == "__main__":
+    main()
+

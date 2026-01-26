@@ -1,16 +1,10 @@
-import sqlite3
-
-DB_PATH = "database/restaurant_menu.db"
+from data.db import get_connection
 
 class Cart:
     """Cart Management Class"""
     
     def __init__(self, user_id):
         self.user_id = user_id
-
-    def connect_db(self):
-        """Connect to database"""
-        return sqlite3.connect(DB_PATH)
 
     def get_or_create_cart_id(self, cur):
         
@@ -25,7 +19,7 @@ class Cart:
     # ================== ADD ITEM TO CART ==================
     def add_to_cart(self, food_id, quantity):
         """Add item to cart"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         # Check if food exists
@@ -80,7 +74,7 @@ class Cart:
     # ================== UPDATE ITEM QUANTITY ==================
     def update_cart(self, food_id, new_quantity):
         """Update item quantity in cart"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         if new_quantity <= 0:
@@ -118,7 +112,7 @@ class Cart:
     # ================== REMOVE ITEM FROM CART ==================
     def remove_from_cart(self, food_id):
         """Remove item from cart"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         cur.execute("""
@@ -147,7 +141,7 @@ class Cart:
     # ================== VIEW CART ==================
     def view_cart(self):
         """View cart contents"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         # JOIN 3 bảng để lấy đủ thông tin của user_id
@@ -182,7 +176,7 @@ class Cart:
     # ================== CALCULATE TOTAL ==================
     def calculate_total(self):
         """Calculate total amount in cart"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         cur.execute("""
@@ -199,7 +193,7 @@ class Cart:
     # ================== CLEAR CART ==================
     def clear_cart(self):
         """Clear all items from cart"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         cur.execute("""
@@ -214,7 +208,7 @@ class Cart:
     # ================== GET CART ITEM COUNT ==================
     def get_item_count(self):
         """Get number of items in cart"""
-        conn = self.connect_db()
+        conn = get_connection()
         cur = conn.cursor()
 
         cur.execute("""

@@ -159,7 +159,6 @@ def view_order_history_ui(customer):
             "Item ID", "Qty", "Unit Price", "Subtotal"
         ))
 
-        print(order["items"])
         for item in order["items"]:
             item_id= item["item_id"]
             qty= item["quantity"]
@@ -172,7 +171,7 @@ def view_order_history_ui(customer):
             subtotal= item["subtotal"]
             if subtotal is None:
                 subtotal= qty* price
-                
+
             print("{:<10} {:<10} {:<12} {:<12}".format(
                 item_id, qty, price, subtotal
             ))

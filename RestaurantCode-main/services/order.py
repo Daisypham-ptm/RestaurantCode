@@ -1,4 +1,5 @@
 from datetime import datetime
+import sqlite3
 from data.db import get_connection
 from models.order_review import OrderStatus
 
@@ -147,6 +148,7 @@ class OrderService:
         SPEC 3.11 – View Order History
         """
         conn = get_connection()
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
         cur.execute("""
@@ -159,21 +161,26 @@ class OrderService:
         orders = cur.fetchall()
         history = []
 
-        for order_id, status, total, date in orders:
+        for order in orders:
             cur.execute("""
-                SELECT item_id, quantity, unit_price, subtotal
+                SELECT 
+                        item_id,
+                        quantity,
+                        COALESCE(unit_price, 0) AS unit_price,
+                        COALESCE(subtotal, quantity* unit_price, 0) AS subtotal
                 FROM order_items
-                WHERE order_id = ?
-            """, (order_id,))
+                WHERE order_id= ?
+            """, (order["order_id"],))
+
             items = cur.fetchall()
 
             history.append({
-                "order_id": order_id,
-                "status": status,
-                "total_amount": total,
-                "order_date": date,
-                "items": items
+                "order_id": order["order_id"],
+                "status": order["status"],
+                "total_amount": order["total_amount"],
+                "order_date": order["order_date"],
+                "items": [dict(item) for item in items]
             })
 
-        conn.close()
-        return history
+            conn.close()
+            return history

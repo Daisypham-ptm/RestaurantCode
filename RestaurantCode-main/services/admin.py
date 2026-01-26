@@ -1,10 +1,5 @@
-import sqlite3
+from data.db import get_connection
 
-DB_PATH = "database/restaurant_menu.db"
-
-
-def get_connection():
-    return sqlite3.connect(DB_PATH)
 def input_int(msg):
     while True:
         try:
@@ -313,14 +308,14 @@ def manage_orders():
     while True:
         print("\n===== MANAGE ORDERS =====")
         print("1. View Orders")
-        print("2. Update Order Status")
+        print("2. Delete Order")
         print("0. Back")
 
         c = input("Choose: ").strip()
         if c == "1":
             view_orders()
         elif c == "2":
-            update_order_status()
+            delete_order()
         elif c == "0":
             break
         else:
@@ -339,13 +334,12 @@ def view_orders():
     input("\nPress Enter to continue...")
 
 
-def update_order_status():
+def delete_order():
     while True:
         view_orders()
-        oid = input_int("Order ID: ")
-        status = input("New status: ").strip().upper()
+        oid = input_int("Order ID to delete: ")
 
-        if not input_yes_no("Confirm update order status"):
+        if not input_yes_no("Confirm delete order"):
             print("Cancelled.")
             if not continue_or_back():
                 break
@@ -353,11 +347,11 @@ def update_order_status():
 
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE orders SET status=? WHERE order_id=?", (status, oid))
+        cur.execute("DELETE FROM orders WHERE order_id=?", (oid,))
         conn.commit()
         conn.close()
 
-        print("Order status updated.")
+        print("Order deleted.")
 
         if not continue_or_back():
             break
@@ -366,16 +360,13 @@ def manage_users():
     while True:
         print("\n===== MANAGE USERS =====")
         print("1. View Users")
-        print("2. Update User")
-        print("3. Delete User")
+        print("2. Delete User")
         print("0. Back")
 
         c = input("Choose: ").strip()
         if c == "1":
             view_users()
         elif c == "2":
-            update_user()
-        elif c == "3":
             delete_user()
         elif c == "0":
             break
@@ -393,38 +384,6 @@ def view_users():
     for r in rows:
         print(f"ID:{r[0]} | Email:{r[1]} | Name:{r[2]} | Phone:{r[3]} | Role:{r[4]}")
     input("\nPress Enter to continue...")
-
-
-def update_user():
-    while True:
-        view_users()
-        uid = input_int("User ID: ")
-        email = input("New email: ").strip()
-        name = input("New full name: ").strip()
-        phone = input("New phone: ").strip()
-        role = input("New role (admin/customer): ").strip()
-
-        if not input_yes_no("Confirm update user"):
-            print("Cancelled.")
-            if not continue_or_back():
-                break
-            continue
-
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            UPDATE users
-            SET email=?, full_name=?, phone_number=?, role=?
-            WHERE user_id=?
-        """, (email, name, phone, role, uid))
-        conn.commit()
-        conn.close()
-
-        print("User updated.")
-
-        if not continue_or_back():
-            break
-
 
 def delete_user():
     while True:

@@ -100,6 +100,19 @@ class Customer(User):
     def rate_menu_item(self):
         pass
 
+    def update_password(self, new_password):
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET password = ? WHERE user_id = ?",
+            (new_password, self.user_id)
+        )
+
+        conn.commit()
+        conn.close()
+
+        self.password = new_password
+        return True
 
 
 

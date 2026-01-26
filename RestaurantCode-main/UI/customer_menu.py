@@ -1,6 +1,7 @@
 from services.order import OrderService
 from services.cart import Cart
 from services.auth import AuthService
+from models.order_review import OrderStatus
 from services.menu import view_menu, search_menu, view_food_detail
 
 
@@ -94,10 +95,16 @@ def place_order_ui(customer):
             payment_method=payment_method
         )
         print(f"Order successful! Your Order ID is {order_id}.")
+        return order_id
     except Exception as e:
         print("Place order failed:", e)
+        return None
 
-def make_payment_ui():
+def make_payment_ui(order_id):
+    if not order_id:
+        print("No order to pay for. Please place an order first.")
+        return
+    
     print("\n===== MAKE PAYMENT =====")
     print("1. Pay by Cash")
     print("2. Pay by Banking")
@@ -105,19 +112,14 @@ def make_payment_ui():
 
     choice = input("Choose payment method: ").strip()
 
-    if choice == "1":
-        print("\nPayment successful!")
-        print("Please pay cash upon delivery.")
-
-    elif choice == "2":
-        print("\nPayment successful!")
-        print("Banking payment completed.")
-
+    if choice in ("1", "2"):
+        OrderService.update_order_status(
+            order_id,
+            OrderStatus.COMPLETED.value
+        )
+        print("Payment successful! Thank you for your order.")
     elif choice == "0":
-        print("\nPayment cancelled.")
-
-    else:
-        print("\nPayment failed! Invalid payment method.")
+        print("Payment cancelled.")
 
 def view_order_status_ui(customer):
     print("\n===== VIEW ORDER STATUS =====")
@@ -203,8 +205,24 @@ def recover_password_ui():
 
     AuthService.recover_password(email)
 
+def change_password_ui(customer):
+    print("\n===== CHANGE PASSWORD =====")
 
+    new_pw = input("New password: ").strip()
+    confirm = input("Confirm new password: ").strip()
+
+    if new_pw != confirm:
+        print("Passwords do not match")
+        return
+
+    customer.update_password(new_pw)
+    customer.password = new_pw
+
+    print("Password updated successfully!")
+    
 def customer_menu(customer):
+    last_order_id= None
+
     while True:
         print("\n========================================")
         print("            CUSTOMER MENU")
@@ -236,10 +254,10 @@ def customer_menu(customer):
             manage_cart_ui(Cart(customer.user_id))
 
         elif choice == "5":
-            place_order_ui(customer)
+            last_order_id = place_order_ui(customer)
 
         elif choice == "6":
-            make_payment_ui()
+            make_payment_ui(last_order_id)
 
         elif choice == "7":
             view_order_status_ui(customer)

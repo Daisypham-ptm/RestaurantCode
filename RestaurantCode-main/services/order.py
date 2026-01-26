@@ -184,3 +184,18 @@ class OrderService:
 
             conn.close()
             return history
+        
+    # ================= UPDATE ORDER STATUS =================
+    @staticmethod
+    def update_order_status(order_id, new_status):
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE orders
+            SET status = ?
+            WHERE order_id = ?
+        """, (new_status, order_id))
+
+        conn.commit()
+        conn.close()

@@ -139,7 +139,19 @@ def view_order_status_ui(customer):
         print("{:<10} {:<12} {:<12} {:<20}".format(
             order_id, status, total, order_date
         ))
+def cancel_order_ui(customer):
+    print("\n===== CANCEL ORDER =====")
+    try:
+        order_id = int(input("Enter Order ID to cancel: ").strip())
+    except ValueError:
+        print("Invalid Order ID!")
+        return
 
+    try:
+        OrderService.cancel_order(customer.user_id, order_id)
+        print(f"Order {order_id} has been cancelled successfully.")
+    except Exception as e:
+        print("Cancel order failed:", e)
 def view_order_history_ui(customer):
     print("\n===== ORDER HISTORY =====")
 
@@ -226,11 +238,12 @@ def customer_menu(customer):
         print("3. View Food Detail")
         print("4. Manage Cart")
         print("5. Place Order")
-        print("6. Make Payment")
-        print("7. View Order Status")
-        print("8. View Order History")
-        print("9. Update Profile")
-        print("10. Recover Password")
+        print("6. Cancel Order")
+        print("7. Make Payment")
+        print("8. View Order Status")
+        print("9. View Order History")
+        print("10. Update Profile")
+        print("11. Recover Password")
         print("0. Logout")
 
         choice = input("Choose an option: ").strip()
@@ -249,20 +262,21 @@ def customer_menu(customer):
 
         elif choice == "5":
             last_order_id = place_order_ui(customer)
-
         elif choice == "6":
+            cancel_order_ui(customer)
+        elif choice == "7":
             make_payment_ui(last_order_id)
 
-        elif choice == "7":
+        elif choice == "8":
             view_order_status_ui(customer)
 
-        elif choice == "8":
+        elif choice == "9":
             view_order_history_ui(customer)
 
-        elif choice == "9":
+        elif choice == "10":
             update_profile_ui(customer)
 
-        elif choice == "10":
+        elif choice == "11":
             change_password_ui(customer)
 
         elif choice == "0":

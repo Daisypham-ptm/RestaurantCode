@@ -199,12 +199,6 @@ def update_profile_ui(user):
     except Exception as e:
         print("Error:", e)
 
-def recover_password_ui():
-    print("\n===== RECOVER PASSWORD =====")
-    email = input("Enter your email: ").strip()
-
-    AuthService.recover_password(email)
-
 def change_password_ui(customer):
     print("\n===== CHANGE PASSWORD =====")
 
@@ -269,7 +263,7 @@ def customer_menu(customer):
             update_profile_ui(customer)
 
         elif choice == "10":
-            AuthService.recover_password_ui(customer.email)
+            change_password_ui(customer)
 
         elif choice == "0":
             print("Logout successful!")
